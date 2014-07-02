@@ -217,6 +217,9 @@ class Client(object):
     DHCP_AGENTS = '/dhcp-agents'
     L3_ROUTERS = '/l3-routers'
     L3_AGENTS = '/l3-agents'
+    DR_PEERS = '/dr-peers'
+    DR_AGENTS = '/dr-agents'
+    DR_AGENT = '/dr-agents/%s'
     LOADBALANCER_POOLS = '/loadbalancer-pools'
     LOADBALANCER_AGENT = '/loadbalancer-agent'
     firewall_rules_path = "/fw/firewall_rules"
@@ -229,6 +232,10 @@ class Client(object):
     firewall_path = "/fw/firewalls/%s"
     net_partitions_path = "/net-partitions"
     net_partition_path = "/net-partitions/%s"
+    routingpeers_path = "/routingpeers"
+    routingpeer_path = "/routingpeers/%s"
+    routinginstances_path = "/routinginstances"
+    routinginstance_path = "/routinginstances/%s"
 
     # API has no way to report plurals, so we have to hard code them
     EXTED_PLURALS = {'routers': 'router',
@@ -254,6 +261,8 @@ class Client(object):
                      'metering_label_rules': 'metering_label_rule',
                      'net_partitions': 'net_partition',
                      'packet_filters': 'packet_filter',
+                     'routingpeers': 'routingpeer',
+                     'routinginstances': 'routinginstance'
                      }
     # 8192 Is the default max URI len for eventlet.wsgi.server
     MAX_URI_LEN = 8192
@@ -882,6 +891,30 @@ class Client(object):
                          body=body)
 
     @APIParamsCall
+    def add_network_to_routinginstance(self, routinginstance, body=None):
+        """Adds a network to dhcp agent."""
+        return self.post((self.routinginstance_path + self.networks_path)
+                         % routinginstance, body=body)
+
+    @APIParamsCall
+    def add_agent_to_routinginstance(self, agent, body=None):
+        """Adds a network to dhcp agent."""
+        return self.post((self.routinginstance_path + self.DR_AGENTS)
+                         % agent, body=body)
+
+    @APIParamsCall
+    def remove_network_from_routinginstance(self, routinginstance, network_id):
+        """Remove a network from routinginstance agent."""
+        return self.delete((self.routinginstance_path + self.networks_path
+                           + "/%s") % (routinginstance, network_id))
+
+    @APIParamsCall
+    def remove_agent_from_routinginstance(self, routinginstance, agent_id):
+        """Remove an agent from routinginstance agent."""
+        return self.delete((self.routinginstance_path + self.DR_AGENT)
+                           % (routinginstance, agent_id))
+
+    @APIParamsCall
     def remove_network_from_dhcp_agent(self, dhcp_agent, network_id):
         """Remove a network from dhcp agent."""
         return self.delete((self.agent_path + self.DHCP_NETS + "/%s") % (
@@ -894,6 +927,16 @@ class Client(object):
                         params=_params)
 
     @APIParamsCall
+    def list_dr_agents_hosting_peer(self, routingpeer, **_params):
+        return self.get((self.routingpeer_path + self.DR_AGENTS) % routingpeer,
+                        params=_params)
+
+    @APIParamsCall
+    def list_agents_on_routinginstance(self, routinginstance, **_params):
+        return self.get((self.routinginstance_path + self.DR_AGENTS)
+                        % routinginstance, params=_params)
+
+    @APIParamsCall
     def list_routers_on_l3_agent(self, l3_agent, **_params):
         """Fetches a list of L3 agents hosting a router."""
         return self.get((self.agent_path + self.L3_ROUTERS) % l3_agent,
@@ -904,6 +947,22 @@ class Client(object):
         """Adds a router to L3 agent."""
         return self.post((self.agent_path + self.L3_ROUTERS) % l3_agent,
                          body=body)
+
+    @APIParamsCall
+    def add_peer_to_dr_agent(self, dr_agent, body):
+        """Adds a peer to a Dynamic Routing agent."""
+        return self.post((self.agent_path + self.DR_PEERS) % dr_agent,
+                         body=body)
+
+    @APIParamsCall
+    def remove_peer_from_dr_agent(self, dr_agent, peer_id):
+        return self.delete((self.agent_path + self.DR_PEERS + "/%s") % (
+            dr_agent, peer_id))
+
+    @APIParamsCall
+    def list_routingpeers_on_dr_agent(self, dr_agent, **_params):
+        return self.get((self.agent_path + self.DR_PEERS) % dr_agent,
+                        params=_params)
 
     @APIParamsCall
     def list_firewall_rules(self, retrieve_all=True, **_params):
@@ -1194,6 +1253,55 @@ class Client(object):
     def delete_packet_filter(self, packet_filter_id):
         """Delete the specified packet filter."""
         return self.delete(self.packet_filter_path % packet_filter_id)
+
+    @APIParamsCall
+    def list_routingpeers(self, **_params):
+        """Fetch all routingpeers."""
+        return self.get(self.routingpeers_path, params=_params)
+
+    @APIParamsCall
+    def list_routinginstances(self, **_params):
+        """Fetch all routinginstances."""
+        return self.get(self.routinginstances_path, params=_params)
+
+    @APIParamsCall
+    def list_networks_on_routinginstance(self, routinginstance, **_params):
+        return self.get((self.routinginstance_path + self.networks_path)
+                        % routinginstance, params=_params)
+
+    @APIParamsCall
+    def show_routingpeer(self, routingpeer_id, **_params):
+        return self.get(self.routingpeer_path % routingpeer_id, params=_params)
+
+    @APIParamsCall
+    def show_routinginstance(self, routinginstance_id, **_params):
+        return self.get(self.routinginstance_path % routinginstance_id,
+                        params=_params)
+
+    @APIParamsCall
+    def create_routingpeer(self, body=None):
+        return self.post(self.routingpeers_path, body=body)
+
+    @APIParamsCall
+    def create_routinginstance(self, body=None):
+        return self.post(self.routinginstances_path, body=body)
+
+    @APIParamsCall
+    def delete_routingpeer(self, routingpeer_id):
+        return self.delete(self.routingpeer_path % routingpeer_id)
+
+    @APIParamsCall
+    def delete_routinginstance(self, routinginstance_id):
+        return self.delete(self.routinginstance_path % routinginstance_id)
+
+    @APIParamsCall
+    def update_routingpeer(self, routingpeer_id, body=None):
+        return self.put(self.routingpeer_path % routingpeer_id, body=body)
+
+    @APIParamsCall
+    def update_routinginstance(self, routinginstance_id, body=None):
+        return self.put(self.routinginstance_path % routinginstance_id,
+                        body=body)
 
     def __init__(self, **kwargs):
         """Initialize a new client for the Neutron v2.0 API."""

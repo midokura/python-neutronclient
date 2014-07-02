@@ -16,6 +16,8 @@
 
 from __future__ import print_function
 
+import logging
+
 from neutronclient.neutron import v2_0 as neutronV20
 from neutronclient.neutron.v2_0 import network
 from neutronclient.neutron.v2_0 import router
@@ -171,6 +173,109 @@ class RemoveRouterFromL3Agent(neutronV20.NeutronCommand):
             parsed_args.l3_agent, _id)
         print(_('Removed router %s from L3 agent') % parsed_args.router,
               file=self.app.stdout)
+
+
+class AddPeerToDRAgent(neutronV20.NeutronCommand):
+
+    log = logging.getLogger(__name__ + '.AddPeerToDRAgent')
+
+    def get_parser(self, prog_name):
+        parser = super(AddPeerToDRAgent, self).get_parser(prog_name)
+        parser.add_argument(
+            'dr_agent',
+            help=_('ID of the DR agent.'))
+        parser.add_argument(
+            'routingpeer',
+            help=_('Peer id to add.'))
+        return parser
+
+    def run(self, parsed_args):
+        self.log.debug('run(%s)' % parsed_args)
+        neutron_client = self.get_client()
+        neutron_client.format = parsed_args.request_format
+        _id = neutronV20.find_resourceid_by_name_or_id(
+            neutron_client, 'routingpeer', parsed_args.routingpeer)
+        neutron_client.add_peer_to_dr_agent(parsed_args.dr_agent,
+                                            {'routingpeer_id': _id})
+        print(_('Added peer %s to Dynamic Routing agent')
+              % parsed_args.routingpeer, file=self.app.stdout)
+
+
+class RemovePeerFromDRAgent(neutronV20.NeutronCommand):
+    """Remove a peer from a DR agent."""
+
+    log = logging.getLogger(__name__ + '.RemovePeerFromDRAgent')
+
+    def get_parser(self, prog_name):
+        parser = super(RemovePeerFromDRAgent, self).get_parser(prog_name)
+        parser.add_argument(
+            'dr_agent',
+            help=_('ID of the DR agent.'))
+        parser.add_argument(
+            'peer',
+            help=_('Peer to remove.'))
+        return parser
+
+    def run(self, parsed_args):
+        self.log.debug('run(%s)' % parsed_args)
+        neutron_client = self.get_client()
+        neutron_client.format = parsed_args.request_format
+        _id = neutronV20.find_resourceid_by_name_or_id(
+            neutron_client, 'routingpeer', parsed_args.peer)
+        neutron_client.remove_peer_from_dr_agent(
+            parsed_args.dr_agent, _id)
+        print(_('Removed Peer %s from DR agent') % parsed_args.peer,
+              file=self.app.stdout)
+    pass
+
+
+class ListRoutingPeersOnDRAgent(neutronV20.ListCommand):
+    """List the routing peers on a DR agent."""
+    log = logging.getLogger(__name__ + '.ListRoutingPeersOnL3Agent')
+    list_columns = ['id', 'peer', 'protocol', 'configuration']
+    resource = 'routingpeer'
+
+    def get_parser(self, prog_name):
+        parser = super(ListRoutingPeersOnDRAgent,
+                       self).get_parser(prog_name)
+        parser.add_argument(
+            'dr_agent',
+            help=_('ID of the DR agent to query.'))
+        return parser
+
+    def call_server(self, neutron_client, search_opts, parsed_args):
+        data = neutron_client.list_routingpeers_on_dr_agent(
+            parsed_args.dr_agent, **search_opts)
+        return data
+
+
+class ListDRAgentsHostingPeer(neutronV20.ListCommand):
+    """List L3 agents hosting a router."""
+
+    resource = 'agent'
+    _formatters = {}
+    log = logging.getLogger(__name__ + '.ListDRAgentsHostingPeer')
+    list_columns = ['id', 'host', 'admin_state_up', 'alive']
+    unknown_parts_flag = False
+
+    def get_parser(self, prog_name):
+        parser = super(ListDRAgentsHostingPeer,
+                       self).get_parser(prog_name)
+        parser.add_argument('peer',
+                            help=_('RoutingPeer to query.'))
+        return parser
+
+    def extend_list(self, data, parsed_args):
+        for agent in data:
+            agent['alive'] = ":-)" if agent['alive'] else 'xxx'
+
+    def call_server(self, neutron_client, search_opts, parsed_args):
+        _id = neutronV20.find_resourceid_by_name_or_id(neutron_client,
+                                                       'routingpeer',
+                                                       parsed_args.peer)
+        search_opts['routingpeer'] = _id
+        data = neutron_client.list_dr_agents_hosting_peer(**search_opts)
+        return data
 
 
 class ListRoutersOnL3Agent(neutronV20.ListCommand):

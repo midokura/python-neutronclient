@@ -18,6 +18,7 @@ try:
     import json
 except ImportError:
     import simplejson as json
+from keystoneclient import access
 import logging
 import os
 
@@ -266,7 +267,7 @@ class HTTPClient(NeutronClientMixin):
         body = json.loads(body)
         for endpoint in body.get('endpoints', []):
             if (endpoint['type'] == 'network' and
-                endpoint.get('region') == self.region_name):
+                    endpoint.get('region') == self.region_name):
                 if self.endpoint_type not in endpoint:
                     raise exceptions.EndpointTypeNotFound(
                         type_=self.endpoint_type)

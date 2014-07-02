@@ -41,6 +41,7 @@ from neutronclient.common import utils
 from neutronclient.neutron.v2_0 import agent
 from neutronclient.neutron.v2_0 import agentscheduler
 from neutronclient.neutron.v2_0 import credential
+from neutronclient.neutron.v2_0 import dynamic_routing as dr
 from neutronclient.neutron.v2_0 import extension
 from neutronclient.neutron.v2_0 import floatingip
 from neutronclient.neutron.v2_0.fw import firewall
@@ -216,6 +217,12 @@ COMMAND_V2 = {
     'l3-agent-router-remove': agentscheduler.RemoveRouterFromL3Agent,
     'router-list-on-l3-agent': agentscheduler.ListRoutersOnL3Agent,
     'l3-agent-list-hosting-router': agentscheduler.ListL3AgentsHostingRouter,
+    'dr-agent-peer-add': agentscheduler.AddPeerToDRAgent,
+    'dr-agent-peer-remove': agentscheduler.RemovePeerFromDRAgent,
+    'routingpeer-list-on-dr-agent': agentscheduler.ListRoutingPeersOnDRAgent,
+    'dr-agent-list-hosting-routingpeer': (
+        agentscheduler.ListDRAgentsHostingPeer
+    ),
     'lb-pool-list-on-agent': agentscheduler.ListPoolsOnLbaasAgent,
     'lb-agent-hosting-pool': agentscheduler.GetLbaasAgentHostingPool,
     'service-provider-list': servicetype.ListServiceProvider,
@@ -295,6 +302,22 @@ COMMAND_V2 = {
     'nec-packet-filter-create': packetfilter.CreatePacketFilter,
     'nec-packet-filter-update': packetfilter.UpdatePacketFilter,
     'nec-packet-filter-delete': packetfilter.DeletePacketFilter,
+    'routinginstance-list': dr.ListRoutingInstances,
+    'routinginstance-create': dr.CreateRoutingInstance,
+    'routinginstance-delete': dr.DeleteRoutingInstance,
+    'routinginstance-show': dr.ShowRoutingInstance,
+    'routinginstance-update': dr.UpdateRoutingInstance,
+    'routinginstance-network-add': dr.AddNetworkToRoutingInstance,
+    'routinginstance-network-remove': dr.RemoveNetworkFromRoutingInstance,
+    'routinginstance-network-list': dr.ListNetworksInRoutingInstance,
+    'routinginstance-agent-add': dr.AddAgentToRoutingInstance,
+    'routinginstance-agent-remove': dr.RemoveAgentFromRoutingInstance,
+    'routinginstance-agent-list': dr.ListAgentsInRoutingInstance,
+    'routingpeer-create': dr.CreateRoutingPeer,
+    'routingpeer-delete': dr.DeleteRoutingPeer,
+    'routingpeer-list': dr.ListRoutingPeers,
+    'routingpeer-show': dr.ShowRoutingPeer,
+    'routingpeer-update': dr.UpdateRoutingPeer
 }
 
 COMMANDS = {'2.0': COMMAND_V2}
@@ -306,6 +329,7 @@ class HelpAction(argparse.Action):
 
     The commands are determined by checking the CommandManager
     instance, passed in as the "default" value for the action.
+
     """
     def __call__(self, parser, namespace, values, option_string=None):
         outputs = []
